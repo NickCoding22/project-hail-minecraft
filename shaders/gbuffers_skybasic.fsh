@@ -1,28 +1,44 @@
 #version 330 compatibility
 
-in vec3 phmSkyRay;
+uniform int renderStage;
+uniform int biome_category;
+uniform float viewHeight;
+uniform float viewWidth;
+uniform mat4 gbufferModelView;
+uniform mat4 gbufferProjectionInverse;
+uniform vec3 fogColor;
+uniform vec3 skyColor;
 
-#include "/lib/uniforms.glsl"
-#include "/lib/adrian.glsl"
+in vec4 glcolor;
 
-/* DRAWBUFFERS:0 */
-layout(location = 0) out vec4 outColor0;
+float fogify(float x, float w) {
+	return w / (x * x + w);
+}
+
+vec3 calcSkyColor(vec3 pos) {
+	float upDot = dot(pos, gbufferModelView[1].xyz); //not much, what's up with you?
+	return mix(skyColor, fogColor, fogify(max(upDot, 0.0), 0.25));
+}
+
+vec3 screenToView(vec3 screenPos) {
+	vec4 ndcPos = vec4(screenPos, 1.0) * 2.0 - 1.0;
+	vec4 tmp = gbufferProjectionInverse * ndcPos;
+	return tmp.xyz / tmp.w;
+}
+
+/* RENDERTARGETS: 0 */
+layout(location = 0) out vec4 color;
 
 void main() {
-	float lr = length(phmSkyRay);
-	vec3 d = lr > 1e-8 ? phmSkyRay / lr : vec3(0.0, 1.0, 0.0);
-
-	bool nebula = phmUseEndSkyNebula();
-#ifdef IRIS
-	// Some builds draw the end “void cap” before biome uniforms match; void verts are ~black.
-	if (!nebula && dot(gl_Color.rgb, gl_Color.rgb) < 0.03 && !hasSkylight && !hasCeiling) {
-		nebula = true;
+	if (biome_category == 8) {
+		color = vec4(0.0, 0.0, 0.0, 1.0);
+		return;
 	}
-#endif
 
-	if (nebula) {
-		outColor0 = vec4(adrianSkyColor(d), 1.0);
+	if (renderStage == MC_RENDER_STAGE_STARS) {
+		color = glcolor;
 	} else {
-		outColor0 = vec4(gl_Color.rgb, 1.0);
+		vec3 pos = screenToView(vec3(gl_FragCoord.xy / vec2(viewWidth, viewHeight), 1.0));
+		color = vec4(calcSkyColor(normalize(pos)), 1.0);
 	}
 }

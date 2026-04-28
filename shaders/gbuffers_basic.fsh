@@ -1,8 +1,18 @@
 #version 330 compatibility
 
-/* DRAWBUFFERS:0 */
-layout(location = 0) out vec4 outColor0;
+uniform sampler2D lightmap;
+
+uniform float alphaTestRef = 0.1;
+
+in vec2 lmcoord;
+in vec4 glcolor;
+
+/* RENDERTARGETS: 0 */
+layout(location = 0) out vec4 color;
 
 void main() {
-	outColor0 = gl_Color;
+	color = glcolor * texture(lightmap, lmcoord);
+	if (color.a < alphaTestRef) {
+		discard;
+	}
 }

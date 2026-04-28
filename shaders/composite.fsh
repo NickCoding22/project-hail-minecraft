@@ -20,16 +20,13 @@ void main() {
     vec4 sceneColor = texture(colortex0, texcoord);
     float depth = texture(depthtex0, texcoord).r;
 
-    // Camera ray in world space
     vec4 ndcPos = vec4(texcoord * 2.0 - 1.0, 1.0, 1.0);
     vec4 viewPos = gbufferProjectionInverse * ndcPos;
     viewPos /= max(viewPos.w, 1e-6);
     vec4 playerSpaceDir = gbufferModelViewInverse * vec4(viewPos.xyz, 0.0);
     vec3 rayDir = normalize(playerSpaceDir.xyz);
-
     vec3 ro = cameraPosition;
 
-    // Reconstruct geometry hit distance for depth testing effects.
     float sceneDist = 1e20;
     if (depth < 0.999999) {
         vec4 blockNDC = vec4(texcoord * 2.0 - 1.0, depth * 2.0 - 1.0, 1.0);
@@ -39,15 +36,12 @@ void main() {
         sceneDist = length(blockWorld.xyz - ro);
     }
 
-    // Petrova line: curved cylindrical tube passing by the planet (torus path).
     vec3 beaconPos = vec3(0.0, 30.0, 0.0);
-    float redIntensity = 1.0;
     float petrovaHeight = beaconPos.y + 128.0;
     float petrovaPathRadius = 202.0;
     float petrovaTubeRadius = 5.2;
     vec3 ringCenter = vec3(beaconPos.x, petrovaHeight, beaconPos.z);
 
-    // Camera state for "inside the Petrova line" effects.
     vec3 camRel = ro - ringCenter;
     float camRadial = length(camRel.xz);
     float camTubeDist = length(vec2(camRadial - petrovaPathRadius, camRel.y));
@@ -74,7 +68,6 @@ void main() {
                 float localGlow = shellMask * modMask;
                 lineGlow = max(lineGlow, localGlow);
 
-                // Sparkles/dots are directly bound to Petrova geometry and animation.
                 vec3 cell = floor(p * 0.22);
                 float hr = hash(cell.x * 117.0 + cell.y * 313.0 + cell.z * 71.0);
                 if (hr > 0.84) {
@@ -87,14 +80,13 @@ void main() {
 
         if (lineGlow > 0.0) {
             vec3 lineCol = vec3(1.0, 0.02, 0.02);
-            sceneColor.rgb += lineCol * lineGlow * (1.55 + redIntensity * 0.5);
+            sceneColor.rgb += lineCol * lineGlow * 2.05;
         }
         if (sparkleAmount > 0.0) {
             vec3 sparkleColor = vec3(1.0, 1.0, 1.0);
             sceneColor.rgb += sparkleColor * min(sparkleAmount * 0.42, 1.5);
         }
 
-        // Entering the Petrova line: red screen tint + fast white particle fly-by.
         if (insidePetrova) {
             float insideStrength = 1.0 - smoothstep(petrovaTubeRadius * 0.45, petrovaTubeRadius * 1.05, camTubeDist);
             vec3 redFog = vec3(0.95, 0.02, 0.04);

@@ -1,23 +1,21 @@
 #version 330 compatibility
 
-in vec2 texcoord;
+uniform sampler2D lightmap;
+uniform sampler2D gtexture;
+
+uniform float alphaTestRef = 0.1;
+
 in vec2 lmcoord;
+in vec2 texcoord;
 in vec4 glcolor;
 
-#include "/lib/uniforms.glsl"
-#include "/lib/adrian.glsl"
-
-/* DRAWBUFFERS:0 */
-layout(location = 0) out vec4 outColor0;
+/* RENDERTARGETS: 0 */
+layout(location = 0) out vec4 color;
 
 void main() {
-	vec4 tex = texture(gtexture, texcoord) * glcolor;
-	vec3 lm = texture(lightmap, lmcoord).rgb;
-	vec3 rgb;
-	if (isAdrianEnd()) {
-		rgb = adrianTerrainShade(tex.rgb, lm, vec3(0.0, 1.0, 0.0), vec3(0.0, 0.0, 1.0));
-	} else {
-		rgb = tex.rgb * lm;
+	color = texture(gtexture, texcoord) * glcolor;
+	color *= texture(lightmap, lmcoord);
+	if (color.a < alphaTestRef) {
+		discard;
 	}
-	outColor0 = vec4(rgb, tex.a);
 }
