@@ -1,0 +1,6 @@
+screen.Petrova_Settings=Project Hail Mary Setup
+option.ENABLE_ADRIAN_ATMOSPHERE=Planet Adrian Atmosphere
+option.ENABLE_PETROVA_LINE=Petrova Line Beam
+option.ENABLE_ASTROPHAGE_SWARM=Astrophage Swarm Particles
+option.REDSHIFT_POWER=Redshift Intensity
+option.SWARM_DENSITY=Particle Density

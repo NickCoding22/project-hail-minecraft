@@ -1,0 +1,39 @@
+# .gitignore for Minecraft resource/shader pack projects
+# Ignore OS and editor files
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+*.sublime-workspace
+*.sublime-project
+.idea/
+.vscode/
+
+# Ignore logs and temp files
+*.log
+*.tmp
+*.bak
+
+# Ignore Minecraft-generated files (if any)
+*.zip
+*.jar
+
+# Ignore build/output folders (if used)
+build/
+dist/
+output/
+
+# Ignore user-specific config
+*.iml
+
+# Ignore Python cache (if any scripts are used)
+__pycache__/
+*.pyc
+*.pyo
+
+# Ignore backup files
+*~
+
+# Ignore pack-specific temp files
+pack.png
+pack.mcmeta.backup
