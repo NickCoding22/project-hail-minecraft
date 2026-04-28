@@ -1,5 +1,12 @@
 #version 330 compatibility
 
+// menu
+#define ENABLE_ADRIAN_ATMOSPHERE // [toggle]
+#define ENABLE_PETROVA_LINE // [toggle]
+#define ENABLE_ASTROPHAGE_SWARM // [toggle]
+#define REDSHIFT_POWER 0.75 // [0.25 0.50 0.75 1.00 1.25]
+#define SWARM_DENSITY 0.82 // [0.70 0.75 0.80 0.82 0.85 0.90]
+
 uniform sampler2D colortex0;
 uniform sampler2D depthtex0;
 uniform mat4 gbufferProjectionInverse;
@@ -58,7 +65,6 @@ void main() {
     bool handLikeForeground = depth <= 0.00002;
 
     if (biome_category == CAT_THE_END) {
-        // Swirling green cloud shell around the End island.
         float cloudCoreRadius = 96.0;
         float cloudThickness = 42.0;
         float outerR = cloudCoreRadius + cloudThickness;
@@ -68,6 +74,8 @@ void main() {
         float b = dot(oc, rayDir);
         float c = dot(oc, oc);
         float hOuter = b * b - (c - outerR * outerR);
+
+        #ifdef ENABLE_ADRIAN_ATMOSPHERE
         if (hOuter > 0.0 && !suppressOverHand) {
             float sq = sqrt(hOuter);
             float t0 = -b - sq;
@@ -83,7 +91,6 @@ void main() {
                 float density = clamp(depthMask * (0.45 + 0.75 * swirl) * (0.7 + edge * 0.3), 0.0, 1.0);
                 vec3 cloudCol = mix(vec3(0.14, 0.34, 0.05), vec3(0.62, 0.96, 0.08), swirl);
                 if (!cameraInsideCloudSphere) {
-                    // Exterior shell is fully opaque.
                     sceneColor.rgb = cloudCol;
                 } else {
                     sceneColor.rgb = mix(sceneColor.rgb, cloudCol, density * 0.72);
@@ -92,7 +99,6 @@ void main() {
             }
         }
 
-        // Interior atmosphere behavior: green ambient lighting and visible overhead cloud layer.
         if (cameraInsideCloudSphere) {
             if (hasSceneGeometry) {
                 vec3 relScene = sceneWorldPos - beaconPos;
@@ -100,7 +106,6 @@ void main() {
                 vec3 dirToBorder = normalize(relScene + vec3(1e-5));
                 vec3 borderPos = dirToBorder * outerR;
 
-                // Outer border drives interior lighting look; anchored in world-space.
                 float borderSwirl = swirlField(borderPos, frameTimeCounter);
                 float localSwirl = swirlField(relScene, frameTimeCounter * 0.75);
 
@@ -112,7 +117,6 @@ void main() {
                 sceneColor.rgb = mix(sceneColor.rgb, interiorGreen, (0.16 + 0.22 * localSwirl) * islandMask);
             }
 
-            // Subtle visible inner dome while inside atmosphere (world-anchored).
             if (hOuter > 0.0) {
                 float tDome = max(-b + sqrt(hOuter), 0.0);
                 if (tDome > 0.0) {
@@ -124,7 +128,9 @@ void main() {
                 }
             }
         }
+        #endif
 
+        #ifdef ENABLE_PETROVA_LINE
         float maxTraceDist = min(sceneDist, 380.0);
         float t = 0.0;
         float lineGlow = 0.0;
@@ -163,12 +169,15 @@ void main() {
             vec3 sparkleColor = vec3(1.0, 1.0, 1.0);
             sceneColor.rgb += sparkleColor * min(sparkleAmount * 0.42, 1.5);
         }
+        #endif
 
+        #ifdef ENABLE_ASTROPHAGE_SWARM
         if (insidePetrova && !suppressOverHand) {
             float insideStrength = 1.0 - smoothstep(petrovaTubeRadius * 0.45, petrovaTubeRadius * 1.05, camTubeDist);
             vec3 redFog = vec3(0.95, 0.02, 0.04);
-            sceneColor.rgb = mix(sceneColor.rgb, vec3(sceneColor.r, sceneColor.g * 0.18, sceneColor.b * 0.22), 0.75 * insideStrength);
-            sceneColor.rgb = mix(sceneColor.rgb, redFog, 0.34 * insideStrength);
+            
+            sceneColor.rgb = mix(sceneColor.rgb, vec3(sceneColor.r, sceneColor.g * 0.18, sceneColor.b * 0.22), REDSHIFT_POWER * insideStrength);
+            sceneColor.rgb = mix(sceneColor.rgb, redFog, (0.34 * REDSHIFT_POWER) * insideStrength);
 
             float particleAmount = 0.0;
             for (int i = 1; i <= 8; i++) {
@@ -180,7 +189,7 @@ void main() {
                 vec3 localPos = fract(samplePos * 0.75) - 0.5;
                 float r = hash(cellId.x * 127.0 + cellId.y * 311.0 + cellId.z * 73.0);
 
-                if (r > 0.82) {
+                if (r > SWARM_DENSITY) {
                     float dist = length(localPos);
                     float twinkle = sin(frameTimeCounter * 9.0 + r * 25.0) * 0.5 + 0.5;
                     particleAmount += smoothstep(0.22, 0.0, dist) * twinkle;
@@ -188,6 +197,7 @@ void main() {
             }
             sceneColor.rgb += vec3(1.0) * min(particleAmount * 0.55, 1.6) * insideStrength;
         }
+        #endif
     }
 
     color = sceneColor;
