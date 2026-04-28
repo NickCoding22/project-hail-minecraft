@@ -61,6 +61,19 @@ mklink /D "%appdata%\.minecraft\shaderpacks\AdrianShaderPack" "<PATH_TO_REPO>\pr
 mklink /D "%appdata%\.minecraft\resourcepacks\RockyResourcePack" "<PATH_TO_REPO>\project-hail-minecraft\RockyResourcePack"
 ```
 
+### Step 3: Allow Symlinks in Minecraft (Security Fix)
+Recent versions of Minecraft block symbolic links by default to prevent malicious packs from accessing your computer. You must tell the game your developer folder is safe by adding it to the `allowed_symlinks.txt` file.
+
+**For Mac:**
+```bash
+echo "<PATH_TO_REPO>/ProjectHailMinecraft/" >> ~/Library/Application\ Support/minecraft/allowed_symlinks.txt
+```
+
+**For Windows:**
+```cmd
+echo <PATH_TO_REPO>\ProjectHailMinecraft\ >> "%appdata%\.minecraft\allowed_symlinks.txt"
+```
+
 ---
 
 ## 🎮 Activating in Game
@@ -76,4 +89,3 @@ Once the symlinks are created, launch Minecraft with your Iris/OptiFine profile.
    * Click **Shader Options** in the bottom right to open the custom *Project Hail Mary Setup* UI, where you can toggle the atmosphere, the Petrova Line, and adjust the Astrophage density sliders!
 
 > **Developer Tip:** If you are actively editing the `.fsh` or `.glsl` files in VS Code, you do not need to restart the game to see your changes. Just press `F3 + R` while in-game to instantly reload the shaders!
-```
