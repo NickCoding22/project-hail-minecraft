@@ -119,7 +119,8 @@ void main() {
 
             if (hOuter > 0.0) {
                 float tDome = max(-b + sqrt(hOuter), 0.0);
-                if (tDome > 0.0) {
+                // Depth-occlude dome so nearby blocks render on top.
+                if (tDome > 0.0 && tDome < sceneDist) {
                     vec3 domeHit = ro + rayDir * tDome;
                     float domeSwirl = swirlField(domeHit - beaconPos, frameTimeCounter * 0.95);
                     vec3 domeCol = mix(vec3(0.07, 0.24, 0.05), vec3(0.46, 0.92, 0.16), domeSwirl);
